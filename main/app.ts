@@ -1,40 +1,36 @@
 process.env.NODE_ENV = process.env.NODE_ENV || "local";
 
-import * as express from "express";
 import * as dotenv from "dotenv";
-import * as bodyParser from "body-parser";
-import * as cors from "cors";
+import Fastify from "fastify";
 
-import { V1Controller } from "./core/controllers/v1.controller";
-import { V1Service } from "./core/services/v1.service";
+import { AppModule } from "./core/app.module";
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 (async function startServer() {
-  const port = process.env.PORT;
-  const app = express();
+  const port = Number(process.env.PORT) || 3000;
 
-  // Initializing Utils
-
-  // Initializing Services
-  const v1Service = new V1Service();
-
-  // Initializing Controllers
-  const v1Controller = new V1Controller({
-    v1Service: v1Service,
+  // Initialize Fastify
+  const app = Fastify({
+    logger: true,
   });
 
-  app.use(bodyParser.json({ limit: "50mb" }));
-  app.use(cors());
+  // Register all routes through the central AppModule
+  await AppModule.register(app, { prefix: "/v1" });
 
-  // Routes Controller Here
-  app.use("/v1", v1Controller.routes());
-
-  app.use((req, res) => {
-    res.status(404).json({ error: `Cannot ${req.method} ${req.url}` });
+  // 404 handler
+  app.setNotFoundHandler((request, reply) => {
+    reply.status(404).send({
+      error: `Cannot ${request.method} ${request.url}`,
+    });
   });
 
-  app.listen(port, () => {
-    console.log(`Server ${process.env.NODE_ENV} started on port ${port}`);
-  });
+  // Start server
+  try {
+    await app.listen({ port, host: "0.0.0.0" });
+    console.log(`Server is running on http://localhost:${port}`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
 })();

@@ -1,13 +1,14 @@
-import { V1Model } from "../models/v1.model";
+import { RestResponseType } from "../../frame/modules/fastify.module";
 
 export class V1Service {
-  private model: V1Model;
+  constructor() {}
 
-  constructor() {
-    this.model = new V1Model();
-  }
-
-  async get() {
-    return this.model.get();
+  async get(): Promise<RestResponseType> {
+    return {
+      status: 200,
+      data: {
+        message: "Hello World",
+      },
+    };
   }
 }

@@ -1,30 +1,21 @@
-import {
-  ExpressRequest,
-  ExpressResponse,
-  ExpressRouter,
-} from "../../frame/modules/express.module";
 import { V1Service } from "../services/v1.service";
+import { Router, Request, Response } from "../../frame/modules/fastify.module";
 
 export class V1Controller {
   constructor(private members: { v1Service: V1Service }) {}
 
-  routes(): ExpressRouter {
-    const router = ExpressRouter();
-
-    router.get("/get", this.get);
-
-    return router;
+  routes() {
+    return async (fastify: Router) => {
+      fastify.get("/get", this.get);
+    };
   }
 
-  private get = async (
-    req: ExpressRequest,
-    res: ExpressResponse
-  ): Promise<ExpressResponse> => {
+  private get = async (request: Request, reply: Response): Promise<void> => {
     try {
       const response = await this.members.v1Service.get();
-      return res.status(response.status).json(response.data);
+      reply.status(response.status).send(response.data);
     } catch (e: any) {
-      return res.status(400).json({ error: e.message });
+      reply.status(400).send({ error: e.message });
     }
   };
 }
